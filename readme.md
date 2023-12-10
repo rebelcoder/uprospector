@@ -4,6 +4,7 @@ uprospector is a utility for extracting unitypackage files without unity. simply
 
 ![image info](./uprospector.png)
 
+![image info](./uprospector2.png)
 
 ## credits
 

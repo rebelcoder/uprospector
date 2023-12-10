@@ -127,7 +127,7 @@ namespace uprospector
 
         public static event Action<string>? package_extracted = null;
         public static event Action<int>? extraction_complete = null;
-
+        
         public static async Task extract_all_packages(string src, string dst)
         {
             var response = await extract_packages(src, dst);
@@ -140,12 +140,13 @@ namespace uprospector
             dst = Path.Combine(dst, "extract_packages");
             try
             {
+                var file_ops = new ParallelOptions { MaxDegreeOfParallelism = 8 };
                 total_packages = await Task.Run(() =>
                     {
                         var packages = find_all_packages(src);
 
                         // Use a parallel loop to process each package
-                        Parallel.ForEach(packages, (package) =>
+                        Parallel.ForEach(packages, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (package) =>
                         {
                             var package_name = Path.GetFileNameWithoutExtension(package);
                             var package_dir = Path.Combine(dst, package_name);
@@ -161,9 +162,14 @@ namespace uprospector
                             // Process each folder in parallel
                             var temp_folder_paths = Directory.GetDirectories(package_dir_temp);
 
-                            Parallel.ForEach(temp_folder_paths, (next_folder) => { extract_file(package_dir, next_folder); });
+                            Parallel.ForEach(temp_folder_paths, file_ops, (next_folder) => { extract_file(package_dir, next_folder); });
 
-                            package_extracted?.Invoke($"{temp_folder_paths.Length} : {package}");
+                            Directory.Delete(package_dir_temp, true);
+
+                            lock (@lock)
+                            {
+                                package_extracted?.Invoke($"{package_name} : {temp_folder_paths.Length} files");
+                            }
                         });
                         return packages.Count;
                     });
