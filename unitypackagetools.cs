@@ -79,7 +79,6 @@ namespace uprospector
                     case "pathname":
                         file_path = File.ReadAllText(file).Split('\n')[0].Trim('\r', '\n', '\0');
                         break;
-                        break;
                     case "preview.png":
                         file_preview_data = File.ReadAllBytes(file);
                         break;
@@ -118,7 +117,14 @@ namespace uprospector
                 var preview_folder = Path.GetDirectoryName(file_path);
                 if (preview_folder != null)
                 {
-                    File.WriteAllBytes(Path.Combine(preview_folder, Path.GetFileNameWithoutExtension(file_path) + "_preview.png"), file_preview_data);
+                    try
+                    {
+                        File.WriteAllBytes(Path.Combine(preview_folder, Path.GetFileNameWithoutExtension(file_path) + "_preview.png"), file_preview_data);
+                    }
+                    catch (Exception e)
+                    {
+                        log_message("Error writing preview file: " + e.Message);
+                    }
                 }
             }
             
