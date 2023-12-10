@@ -88,7 +88,9 @@ namespace uprospector
             }
 
             if (string.IsNullOrWhiteSpace(file_path))
-                throw new FileNotFoundException($"File path missing in {folder}");
+            {
+                log_message($"File path missing in {folder}");
+            }
 
             file_path = Path.Combine(output_directory, file_path);
             
@@ -110,6 +112,14 @@ namespace uprospector
             if (file_data != null && file_data.Length > 0)
             {
                 File.WriteAllBytes(file_path, file_data);
+            }
+            else
+            {
+                bool is_folder = Path.GetExtension(file_path).Length == 0;
+                if (!is_folder)
+                {
+                    log_message($"File data missing in {folder} : {file_path} : is_folder = {is_folder}");
+                }
             }
 
             if (file_preview_data is { Length: > 0 })
@@ -146,14 +156,16 @@ namespace uprospector
             dst = Path.Combine(dst, "extract_packages");
             try
             {
-                var file_ops = new ParallelOptions { MaxDegreeOfParallelism = 8 };
+                var file_ops = new ParallelOptions { MaxDegreeOfParallelism = 16 };
                 total_packages = await Task.Run(() =>
                     {
                         var packages = find_all_packages(src);
 
                         // Use a parallel loop to process each package
-                        Parallel.ForEach(packages, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (package) =>
+                        var package_result = Parallel.ForEach(packages, new ParallelOptions { MaxDegreeOfParallelism = 8 }, (package) =>
                         {
+                            log_message($"Extracting {package}");
+                            
                             var package_name = Path.GetFileNameWithoutExtension(package);
                             var package_dir = Path.Combine(dst, package_name);
                             var package_dir_temp = Path.Combine(package_dir, "t." + Guid.NewGuid());
@@ -163,20 +175,38 @@ namespace uprospector
                                 Directory.CreateDirectory(package_dir_temp);
                             }
 
-                            extract_tgz(package, package_dir_temp);
-
-                            // Process each folder in parallel
-                            var temp_folder_paths = Directory.GetDirectories(package_dir_temp);
-
-                            Parallel.ForEach(temp_folder_paths, file_ops, (next_folder) => { extract_file(package_dir, next_folder); });
-
-                            Directory.Delete(package_dir_temp, true);
-
-                            lock (@lock)
+                            try
                             {
-                                package_extracted?.Invoke($"{package_name} : {temp_folder_paths.Length} files");
+                                extract_tgz(package, package_dir_temp);
+
+                                // Process each folder in parallel
+                                var temp_folder_paths = Directory.GetDirectories(package_dir_temp);
+
+                                var file_result = Parallel.ForEach(temp_folder_paths, file_ops, (next_folder) => { extract_file(package_dir, next_folder); });
+
+                                if (!file_result.IsCompleted)
+                                {
+                                    log_message($"Error extracting package {package_name}");
+                                }
+                                
+                                Directory.Delete(package_dir_temp, true);
+                                
+                                lock (@lock)
+                                {
+                                    package_extracted?.Invoke($"{package_name} : {temp_folder_paths.Length} files");
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                log_message($"Error extracting package {package_name} : {e.Message}");
                             }
                         });
+                        
+                        if (!package_result.IsCompleted)
+                        {
+                            log_message($"Error extracting packages");
+                        }
+                        
                         return packages.Count;
                     });
             }
