@@ -20,16 +20,25 @@ namespace uprospector
         {
             InitializeComponent();
 
-            instructions_text.ReadOnly = true;
-            instructions_text.CanFocus = false;
             progress_bar.CanFocus = false;
             progress_bar.Visible = false;
             destination_path.CanFocus = false;
             source_path.CanFocus = false;
             source_path.ReadOnly = true;
             destination_path.ReadOnly = true;
-            instructions_text.ReadOnly = true;
 
+            remove_unused_directories.Checked = unity_package_tools.remove_unused_directories;
+            remove_unused_directories.Toggled += (args) =>
+            {
+                unity_package_tools.remove_unused_directories = remove_unused_directories.Checked;
+            };
+            
+            exclude_unity_only.Checked = unity_package_tools.exclude_unity_files;
+            exclude_unity_only.Toggled += (args) =>
+            {
+                unity_package_tools.exclude_unity_files = exclude_unity_only.Checked;
+            };
+            
             string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
             // Construct the full path to the Unity Asset Store folder

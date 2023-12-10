@@ -4,11 +4,29 @@ using System.Text;
 
 namespace uprospector
 {
-    public class unity_package_tools
+    public static class unity_package_tools
     {
+        public static bool exclude_unity_files = false;
+        public static bool remove_unused_directories = false;
+        public static event Action<string>? package_extracted = null;
+        public static event Action<int>? extraction_complete = null;
+
         private static readonly object @lock = new object();
         private static readonly string log_file_path = "uprospector.log";
-
+        private static readonly List<string> excluded_extensions = new List<string>()
+        {
+            ".unity", ".anim", ".controller", ".prefab", ".asset", ".mat"
+        };
+        
+        static bool is_excluded(string file_path)
+        {
+            if(!exclude_unity_files)
+                return false;
+            
+            var extension = Path.GetExtension(file_path);
+            return excluded_extensions.Contains(extension);
+        }
+        
         public static void log_message(string message)
         {
             lock (@lock)
@@ -62,7 +80,7 @@ namespace uprospector
             stream.Close();
         }
         
-        private static string extract_file(string output_directory, string folder)
+        private static void extract_file(string output_directory, string folder)
         {
             byte[]? file_data = null;
             string file_path = "";
@@ -92,6 +110,11 @@ namespace uprospector
                 log_message($"File path missing in {folder}");
             }
 
+            if (is_excluded(file_path))
+            {
+                return;
+            }
+            
             file_path = Path.Combine(output_directory, file_path);
             
             var asset_folder = Path.GetDirectoryName(file_path);
@@ -137,13 +160,8 @@ namespace uprospector
                     }
                 }
             }
-            
-            return file_path;
         }
 
-        public static event Action<string>? package_extracted = null;
-        public static event Action<int>? extraction_complete = null;
-        
         public static async Task extract_all_packages(string src, string dst)
         {
             var response = await extract_packages(src, dst);
@@ -153,7 +171,7 @@ namespace uprospector
         private static async Task<int> extract_packages(string src, string dst)
         {
             int total_packages = 0;
-            dst = Path.Combine(dst, "extract_packages");
+            dst = Path.Combine(dst, "extracted_packages");
             try
             {
                 var file_ops = new ParallelOptions { MaxDegreeOfParallelism = 16 };
@@ -189,7 +207,18 @@ namespace uprospector
                                     log_message($"Error extracting package {package_name}");
                                 }
                                 
-                                Directory.Delete(package_dir_temp, true);
+                                try
+                                {
+                                    Directory.Delete(package_dir_temp, true);
+
+                                    if (remove_unused_directories)
+                                    {
+                                        directory_cleaner.remove_unused(package_dir);
+                                    }
+                                }catch(Exception e)
+                                {
+                                    log_message($"Error removing unused directories: {e.Message}");
+                                }
                                 
                                 lock (@lock)
                                 {

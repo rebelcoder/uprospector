@@ -17,6 +17,10 @@ namespace uprospector {
         
         private Terminal.Gui.ColorScheme tgDefault;
         
+        private Terminal.Gui.CheckBox remove_unused_directories;
+        
+        private Terminal.Gui.CheckBox exclude_unity_only;
+        
         private Terminal.Gui.TextField source_path;
         
         private Terminal.Gui.TextField destination_path;
@@ -31,10 +35,7 @@ namespace uprospector {
         
         private Terminal.Gui.Button exit_btn;
         
-        private Terminal.Gui.TextView instructions_text;
-        
         private void InitializeComponent() {
-            this.instructions_text = new Terminal.Gui.TextView();
             this.exit_btn = new Terminal.Gui.Button();
             this.extract_btn = new Terminal.Gui.Button();
             this.dst_button = new Terminal.Gui.Button();
@@ -42,6 +43,8 @@ namespace uprospector {
             this.progress_bar = new Terminal.Gui.ProgressBar();
             this.destination_path = new Terminal.Gui.TextField();
             this.source_path = new Terminal.Gui.TextField();
+            this.exclude_unity_only = new Terminal.Gui.CheckBox();
+            this.remove_unused_directories = new Terminal.Gui.CheckBox();
             this.tgDefault = new Terminal.Gui.ColorScheme();
             this.tgDefault.Normal = new Terminal.Gui.Attribute(Terminal.Gui.Color.White, Terminal.Gui.Color.Blue);
             this.tgDefault.HotNormal = new Terminal.Gui.Attribute(Terminal.Gui.Color.BrightCyan, Terminal.Gui.Color.Blue);
@@ -61,10 +64,30 @@ namespace uprospector {
             this.Border.DrawMarginFrame = true;
             this.TextAlignment = Terminal.Gui.TextAlignment.Left;
             this.Title = "uprospector - set your assets free";
+            this.remove_unused_directories.Width = 6;
+            this.remove_unused_directories.Height = 1;
+            this.remove_unused_directories.X = Pos.Center();
+            this.remove_unused_directories.Y = 1;
+            this.remove_unused_directories.Visible = true;
+            this.remove_unused_directories.Data = "remove_unused_directories";
+            this.remove_unused_directories.Text = "remove unused directories";
+            this.remove_unused_directories.TextAlignment = Terminal.Gui.TextAlignment.Left;
+            this.remove_unused_directories.Checked = false;
+            this.Add(this.remove_unused_directories);
+            this.exclude_unity_only.Width = 6;
+            this.exclude_unity_only.Height = 1;
+            this.exclude_unity_only.X = Pos.Center();
+            this.exclude_unity_only.Y = Pos.Bottom(remove_unused_directories) + 1;
+            this.exclude_unity_only.Visible = true;
+            this.exclude_unity_only.Data = "exclude_unity_only";
+            this.exclude_unity_only.Text = "exclude unity only files";
+            this.exclude_unity_only.TextAlignment = Terminal.Gui.TextAlignment.Left;
+            this.exclude_unity_only.Checked = false;
+            this.Add(this.exclude_unity_only);
             this.source_path.Width = 55;
             this.source_path.Height = 1;
-            this.source_path.X = 44;
-            this.source_path.Y = 9;
+            this.source_path.X = Pos.Center();
+            this.source_path.Y = Pos.Bottom(exclude_unity_only) + 3;
             this.source_path.Visible = true;
             this.source_path.Secret = false;
             this.source_path.Data = "source_path";
@@ -73,8 +96,8 @@ namespace uprospector {
             this.Add(this.source_path);
             this.destination_path.Width = 55;
             this.destination_path.Height = 1;
-            this.destination_path.X = 44;
-            this.destination_path.Y = 10;
+            this.destination_path.X = Pos.Center();
+            this.destination_path.Y = Pos.Bottom(source_path) + 1;
             this.destination_path.Visible = true;
             this.destination_path.Secret = false;
             this.destination_path.Data = "destination_path";
@@ -135,20 +158,6 @@ namespace uprospector {
             this.exit_btn.TextAlignment = Terminal.Gui.TextAlignment.Centered;
             this.exit_btn.IsDefault = false;
             this.Add(this.exit_btn);
-            this.instructions_text.Width = 40;
-            this.instructions_text.Height = 5;
-            this.instructions_text.X = 78;
-            this.instructions_text.Y = 23;
-            this.instructions_text.Visible = true;
-            this.instructions_text.ColorScheme = this.tgDefault;
-            this.instructions_text.AllowsTab = true;
-            this.instructions_text.AllowsReturn = true;
-            this.instructions_text.WordWrap = false;
-            this.instructions_text.Data = "instructions_text";
-            this.instructions_text.Text = "This tool will extract all unitypackage\r\nfiles found in the folder and subfolders" +
-                "\r\nof the path specified.The default unity\r\nlocation is set by default.";
-            this.instructions_text.TextAlignment = Terminal.Gui.TextAlignment.Left;
-            this.Add(this.instructions_text);
         }
     }
 }
